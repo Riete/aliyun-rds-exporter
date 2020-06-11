@@ -103,6 +103,12 @@ func (r *RdsExporter) GetMetric(metricName string) {
 func (r *RdsExporter) InitGauge() {
 	r.NewClient()
 	r.GetInstance()
+	go func() {
+		for {
+			time.Sleep(5 * time.Minute)
+			r.GetInstance()
+		}
+	}()
 	r.GetMetricMeta()
 	r.metrics = map[string]*prometheus.GaugeVec{}
 	for _, v := range r.metricMeta {
