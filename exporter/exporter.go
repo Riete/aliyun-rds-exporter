@@ -76,9 +76,19 @@ func (r *RdsExporter) GetMetricMeta() {
 }
 
 func (r *RdsExporter) GetMetric(metricName string) {
+	var dimensions []map[string]string
+	for k := range r.instances {
+		d := map[string]string{"instanceId": k}
+		dimensions = append(dimensions, d)
+	}
+	dimension, err := json.Marshal(dimensions)
+	if err != nil {
+		log.Println(err)
+	}
 	request := cms.CreateDescribeMetricLastRequest()
 	request.Namespace = PROJECT
 	request.MetricName = metricName
+	request.Dimensions = string(dimension)
 	request.Period = "300"
 	response, err := r.client.DescribeMetricLast(request)
 	if err != nil {
