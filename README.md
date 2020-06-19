@@ -8,7 +8,7 @@
 ```
 docker run \ 
   -d \ 
-  --name aliyun-slb-exporter \
+  --name aliyun-rds-exporter \
   -e ACCESS_KEY_ID=<aliyun ak> \
   -e ACCESS_KEY_SECRET=<aliyun ak sk> \
   -e REGION_ID=<region id> \
