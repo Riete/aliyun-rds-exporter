@@ -119,13 +119,13 @@ func (r *RdsExporter) InitGauge() {
 	}
 }
 
-func (r RdsExporter) Describe(ch chan<- *prometheus.Desc) {
+func (r *RdsExporter) Describe(ch chan<- *prometheus.Desc) {
 	for _, v := range r.metrics {
 		v.Describe(ch)
 	}
 }
 
-func (r RdsExporter) Collect(ch chan<- prometheus.Metric) {
+func (r *RdsExporter) Collect(ch chan<- prometheus.Metric) {
 	for _, v := range r.metricMeta {
 		if v == MysqlTotalSessions {
 			continue

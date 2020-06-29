@@ -18,7 +18,7 @@ func main() {
 	rds := exporter.RdsExporter{}
 	rds.InitGauge()
 	registry := prometheus.NewRegistry()
-	registry.MustRegister(rds)
+	registry.MustRegister(&rds)
 	handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	http.Handle("/metrics", handler)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", ListenPort), nil))
