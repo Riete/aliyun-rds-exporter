@@ -47,6 +47,7 @@ func (r *RdsExporter) GetInstance() {
 		panic(err)
 	}
 	instances := make(map[string]string)
+	instancesType := make(map[string]string)
 	maxConnections := make(map[string]float64)
 	for _, v := range response.Items.DBInstance {
 		maxConnection := QueryMaxConnection(v.DBInstanceId)
@@ -56,8 +57,11 @@ func (r *RdsExporter) GetInstance() {
 		} else {
 			instances[v.DBInstanceId] = v.DBInstanceId
 		}
+		instancesType[v.DBInstanceId] = v.DBInstanceType
+
 	}
 	r.instances = instances
+	r.instancesType = instancesType
 	r.maxConnections = maxConnections
 }
 
@@ -89,7 +93,7 @@ func (r *RdsExporter) GetMetric(metricName string) {
 	request.Namespace = PROJECT
 	request.MetricName = metricName
 	request.Dimensions = string(dimension)
-	request.Period = "300"
+	request.Period = "180"
 	response, err := r.client.DescribeMetricLast(request)
 	if err != nil {
 		log.Println(err)
@@ -132,6 +136,11 @@ func (r *RdsExporter) Collect(ch chan<- prometheus.Metric) {
 		}
 		r.GetMetric(v)
 		for _, d := range r.DataPoints {
+			if v == DataDelay {
+				if r.instancesType[d.InstanceId] != ReadOnly {
+					continue
+				}
+			}
 			r.metrics[v].With(prometheus.Labels{
 				"instance_id":   d.InstanceId,
 				"instance_name": r.instances[d.InstanceId],

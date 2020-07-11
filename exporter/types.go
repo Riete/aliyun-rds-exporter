@@ -16,7 +16,9 @@ var (
 const (
 	PROJECT            string = "acs_rds_dashboard"
 	MysqlTotalSessions string = "MySQL_TotalSessions"
-	ConnectionUsage           = "ConnectionUsage"
+	ConnectionUsage    string = "ConnectionUsage"
+	ReadOnly           string = "Readonly"
+	DataDelay          string = "DataDelay"
 )
 
 type RdsExporter struct {
@@ -27,6 +29,7 @@ type RdsExporter struct {
 	}
 	metrics        map[string]*prometheus.GaugeVec
 	instances      map[string]string
+	instancesType  map[string]string
 	maxConnections map[string]float64
 	metricMeta     []string
 }
