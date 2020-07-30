@@ -74,7 +74,9 @@ func (r *RdsExporter) GetMetricMeta() {
 		panic(err)
 	}
 	for _, v := range response.Resources.Resource {
-		r.metricMeta = append(r.metricMeta, v.MetricName)
+		if !NoDataMetricName[v.MetricName] {
+			r.metricMeta = append(r.metricMeta, v.MetricName)
+		}
 	}
 	r.metricMeta = append(r.metricMeta, MysqlTotalSessions)
 }
