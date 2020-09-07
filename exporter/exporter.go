@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
@@ -11,6 +12,16 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/rds"
 	"github.com/prometheus/client_golang/prometheus"
 )
+
+var sleep = false
+
+func wakeup() {
+	lock := sync.RWMutex{}
+	lock.Lock()
+	time.Sleep(time.Minute * time.Duration(1))
+	sleep = false
+	lock.Unlock()
+}
 
 func QueryMaxConnection(instanceId string) float64 {
 	client, err := rds.NewClientWithAccessKey(regionId, accessKeyId, accessKeySecret)
@@ -132,31 +143,35 @@ func (r *RdsExporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (r *RdsExporter) Collect(ch chan<- prometheus.Metric) {
-	for _, v := range r.metricMeta {
-		if v == MysqlTotalSessions {
-			continue
-		}
-		r.GetMetric(v)
-		for _, d := range r.DataPoints {
-			if v == DataDelay {
-				if r.instancesType[d.InstanceId] != ReadOnly {
-					continue
-				}
+	if !sleep {
+		sleep = true
+		go wakeup()
+		for _, v := range r.metricMeta {
+			if v == MysqlTotalSessions {
+				continue
 			}
-			r.metrics[v].With(prometheus.Labels{
-				"instance_id":   d.InstanceId,
-				"instance_name": r.instances[d.InstanceId],
-			}).Set(d.Average)
-		}
-		if v == ConnectionUsage {
+			r.GetMetric(v)
 			for _, d := range r.DataPoints {
-				r.metrics[MysqlTotalSessions].With(prometheus.Labels{
+				if v == DataDelay {
+					if r.instancesType[d.InstanceId] != ReadOnly {
+						continue
+					}
+				}
+				r.metrics[v].With(prometheus.Labels{
 					"instance_id":   d.InstanceId,
 					"instance_name": r.instances[d.InstanceId],
-				}).Set(d.Average * r.maxConnections[d.InstanceId] / 100)
+				}).Set(d.Average)
 			}
+			if v == ConnectionUsage {
+				for _, d := range r.DataPoints {
+					r.metrics[MysqlTotalSessions].With(prometheus.Labels{
+						"instance_id":   d.InstanceId,
+						"instance_name": r.instances[d.InstanceId],
+					}).Set(d.Average * r.maxConnections[d.InstanceId] / 100)
+				}
+			}
+			time.Sleep(34 * time.Millisecond)
 		}
-		time.Sleep(34 * time.Millisecond)
 	}
 	for _, m := range r.metrics {
 		m.Collect(ch)
